@@ -23,8 +23,11 @@ export class CdkChallengeStack extends cdk.Stack {
       restApiName: "CDKChallengeService"
     });
 
+    //Resources. Define the route /cdk-challenge/{dynamic}
     const challengeResource = api.root.addResource('cdk-challenge');
+    const dynamicResource = challengeResource.addResource('{dynamic}');
 
+    //Let's create an integration between lambda and api gateway 
     const challengeIntegration = new apigateway.LambdaIntegration(challengeFunction, {
       proxy: false,
       requestTemplates: {
@@ -36,7 +39,7 @@ export class CdkChallengeStack extends cdk.Stack {
         {
           statusCode: "200",
           responseTemplates: {
-            "text/html": "$input.path('$.body')"
+            "text/html": "<h1>$input.path('$')</h1>"
           },
           responseParameters: {
             "method.response.header.Content-Type": "'text/html'"
@@ -45,15 +48,16 @@ export class CdkChallengeStack extends cdk.Stack {
       ]
     });
 
-    challengeResource.addMethod('GET', challengeIntegration, {
+    //A GET method for cdk-challenge/{dynamic}
+    dynamicResource.addMethod('GET', challengeIntegration, {
       requestParameters: {
-        'method.request.querystring.dynamic': true
+        'method.request.path.dynamic': true
       },
       methodResponses: [
         { 
           statusCode: "200",
           responseModels: {
-            "application/json": apigateway.Model.EMPTY_MODEL
+            "text/html": apigateway.Model.EMPTY_MODEL
           },
           responseParameters: {
             "method.response.header.Content-Type": true

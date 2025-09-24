@@ -1,5 +1,1 @@
-interface ReturningData {
-    body: string
-}
-
-export type CDKChallengeHandler = (event: { dynamic : string}) => Promise<ReturningData>
+export type CDKChallengeHandler = (event: { dynamic : string}) => Promise<string>
