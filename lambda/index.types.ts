@@ -1,1 +1,1 @@
-export type CDKChallengeHandler = (event: { dynamic : string}) => Promise<string>
+export type CDKChallengeHandler = () => Promise<string>

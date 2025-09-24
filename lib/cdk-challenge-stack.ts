@@ -3,6 +3,8 @@ import { Construct } from 'constructs';
 
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 
 export class CdkChallengeStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -10,30 +12,37 @@ export class CdkChallengeStack extends cdk.Stack {
 
     // The code that defines your stack goes here
 
+    //SSM Parameter Store to store the string
+    const dynamicStringParameter = new ssm.StringParameter(this, 'DynamicStringParameter', {
+      parameterName: '/dynamic-string', 
+      stringValue: 'Hello World'
+    });
 
     //Lambda function
     const challengeFunction = new lambda.Function(this, "CDKChallengeFunction", {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "index.handler",
-      code: lambda.AssetCode.fromAsset("lambda")
+      code: lambda.AssetCode.fromAsset("lambda"),
+      environment: {
+        DYNAMIC_STRING_PARAMETER_NAME: dynamicStringParameter.parameterName
+      }
     });
+
+    //Lambda permissions to access to parameter store
+    dynamicStringParameter.grantRead(challengeFunction);
+
 
     //Let's define an api with api gateway
     const api = new apigateway.RestApi(this, "CDKChallengeApi", {
       restApiName: "CDKChallengeService"
     });
 
-    //Resources. Define the route /cdk-challenge/{dynamic}
+    //A Resource. Define the route /cdk-challenge
     const challengeResource = api.root.addResource('cdk-challenge');
 
     //Let's create an integration between lambda and api gateway 
     const challengeIntegration = new apigateway.LambdaIntegration(challengeFunction, {
       proxy: false,
-      requestTemplates: {
-        'application/json': `{
-          "dynamic": "$input.params('dynamic')"
-        }`
-      },
       integrationResponses: [
         {
           statusCode: "200",
@@ -47,11 +56,8 @@ export class CdkChallengeStack extends cdk.Stack {
       ]
     });
 
-    //A GET method for cdk-challenge/{dynamic}
+    //A GET method for /cdk-challenge
     challengeResource.addMethod('GET', challengeIntegration, {
-      requestParameters: {
-        'method.request.querystring.dynamic': true
-      },
       methodResponses: [
         { 
           statusCode: "200",
