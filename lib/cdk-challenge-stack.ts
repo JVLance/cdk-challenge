@@ -25,7 +25,6 @@ export class CdkChallengeStack extends cdk.Stack {
 
     //Resources. Define the route /cdk-challenge/{dynamic}
     const challengeResource = api.root.addResource('cdk-challenge');
-    const dynamicResource = challengeResource.addResource('{dynamic}');
 
     //Let's create an integration between lambda and api gateway 
     const challengeIntegration = new apigateway.LambdaIntegration(challengeFunction, {
@@ -49,9 +48,9 @@ export class CdkChallengeStack extends cdk.Stack {
     });
 
     //A GET method for cdk-challenge/{dynamic}
-    dynamicResource.addMethod('GET', challengeIntegration, {
+    challengeResource.addMethod('GET', challengeIntegration, {
       requestParameters: {
-        'method.request.path.dynamic': true
+        'method.request.querystring.dynamic': true
       },
       methodResponses: [
         { 
